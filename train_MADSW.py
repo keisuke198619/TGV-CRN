@@ -387,16 +387,6 @@ def transfer_data(model, dataloader, criterion, args, epoch, eval_use_cuda=False
                 loss += fail_loss*args.lambda_event
                 loss += curve_loss*args.lambda_event
 
-            a_or_ipw_losses.append(a_or_ipw_loss.item())
-            outcome_losses.append(outcome_loss.item())
-            if Pred_X:
-                L_recXs.append(L_recX.item())
-                if 'V' in args.model:
-                    L_kls.append(L_kl.item())
-            if 'carla' in args.data:
-                L_fails.append(fail_loss.item())  
-                L_curves.append(curve_loss.item())  
-
             # detach
             for i in range(len(a_or_ipw_outputs)):
                 try: a_or_ipw_outputs[i] = detach(a_or_ipw_outputs[i],eval_use_cuda)

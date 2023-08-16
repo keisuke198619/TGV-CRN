@@ -177,7 +177,7 @@ class GDSW(nn.Module):
 
                 node_type = torch.zeros(1,n_all_agents,2).to(device)
                 node_type[:,0,0] = 1 # ego: [1 0] OK 
-                node_type[:,0:,1] = 1 # non-ego: [0 1] OK
+                node_type[:,1:,1] = 1 # non-ego: [0 1] OK
             else:
                 edge_type = None
                 node_type = None

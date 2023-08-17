@@ -252,7 +252,7 @@ class RNN(nn.Module):
                     # added
                     cf_hidden = torch.cat((cf_zx, x_demo_emd, cf_treatment[:,i:i+1,n]), -1)
                     cf_h = self.hidden2hidden_outcome_f(cf_hidden)
-                    cf_x_ = self.hidden2hidden_x(f_hidden) 
+                    cf_x_ = self.hidden2hidden_x(cf_hidden) 
 
                     if self.x_residual: 
                         cf_x_ = self.hidden2out_x(cf_x_)

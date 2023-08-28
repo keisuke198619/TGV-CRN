@@ -225,7 +225,8 @@ class RNN(nn.Module):
                         y_new = self.hidden2out_outcome_f(f_h_) 
                     else:
                         if self.theory and 'carla' in self.dataset: 
-                            y_new = 0.01*(1-collision.unsqueeze(1))*self.hidden2out_outcome_f(f_h_) + x[:,i:i+1,-4] #y[:,i:i+1] # 0->1, 1->0
+                            # y_new = 0.01*(1-collision.unsqueeze(1))*self.hidden2out_outcome_f(f_h_) + x[:,i:i+1,-4] #y[:,i:i+1] # 0->1, 1->0
+                            y_new = 0.01*(1-collision.unsqueeze(1))*(self.hidden2out_outcome_f(f_h_)+ y[:,i:i+1]) + x[:,i:i+1,-4]
                         else:
                             y_new = self.hidden2out_outcome_f(f_h_) + y[:,i:i+1]
                     if torch.sum(torch.isnan(y_new))>0:
@@ -276,8 +277,9 @@ class RNN(nn.Module):
                             if 'nba' in self.dataset: 
                                 y_new_cf = torch.clamp(y_new_cf,max=1)
                         else:
-                            if self.theory and 'carla' in self.dataset and i >= self.burn_in0: 
-                                y_new_cf = 0.01*(1-collision.unsqueeze(1))*self.hidden2out_outcome_f(cf_h) + x_cf[n][:,i:i+1,-4] #y_cf[n][:,i:i+1] # 0->1, 1->0
+                            if self.theory and 'carla' in self.dataset: 
+                                # y_new_cf = 0.01*(1-collision.unsqueeze(1))*(self.hidden2out_outcome_f(cf_h) + x_cf[n][:,i:i+1,-4] #y_cf[n][:,i:i+1] # 0->1, 1->0
+                                y_new_cf = 0.01*(1-collision.unsqueeze(1))*(self.hidden2out_outcome_f(cf_h)+ y_cf[n][:,i:i+1]) + x_cf[n][:,i:i+1,-4]
                             else:
                                 y_new_cf = self.hidden2out_outcome_f(cf_h) + y_cf[n][:,i:i+1]
                         cf_outcome_out[n].append(y_new_cf)
@@ -288,7 +290,7 @@ class RNN(nn.Module):
                         elif not rollout and i >= self.burn_in0:
                             x_cf_[n][:,i+1] = tmp_pred_cf
                     else:
-                        cf_outcome_out[n].append(y_cf[n][:,i+1:i])
+                        cf_outcome_out[n].append(y_cf[n][:,i+1:i+2])
             # roll out
             if rollout and i >= burn_in-1 and i < len_time: # 
                 x[:,i+1] = tmp_pred

@@ -499,8 +499,9 @@ class GVCRN(nn.Module):
                         if 'nba' in self.dataset: 
                             y_new = torch.clamp(y_new,max=1)
                     else:
-                        if 'carla' in self.dataset and self.theory: # and i >= self.burn_in0
-                            y_new = 0.01*(1-collision.unsqueeze(1))*self.hidden2out_outcome_f(f_h_) + x[:,i:i+1,-4] # y[:,i:i+1] # 0->1, 1->0
+                        if 'carla' in self.dataset and self.theory:
+                            # y_new = 0.01*(1-collision.unsqueeze(1))*self.hidden2out_outcome_f(f_h_) + x[:,i:i+1,-4] # y[:,i:i+1] # 0->1, 1->0
+                            y_new = 0.01*(1-collision.unsqueeze(1))*(self.hidden2out_outcome_f(f_h_)+ y[:,i:i+1]) + x[:,i:i+1,-4]
                         else:
                             y_new = self.hidden2out_outcome_f(f_h_) + y[:,i:i+1]
                     if torch.sum(torch.isnan(y_new))>0:
@@ -615,7 +616,8 @@ class GVCRN(nn.Module):
                                 y_new_cf = torch.clamp(y_new_cf,max=1)
                         else:
                             if self.theory and 'carla' in self.dataset: 
-                                y_new_cf = 0.01*(1-collision.unsqueeze(1))*self.hidden2out_outcome_f(cf_h) + x_cf[n][:,i:i+1,-4] #  y_cf[n][:,i:i+1] # 0->1, 1->0
+                                # y_new_cf = 0.01*(1-collision.unsqueeze(1))*self.hidden2out_outcome_f(cf_h) + x_cf[n][:,i:i+1,-4] #  y_cf[n][:,i:i+1] # 0->1, 1->0
+                                y_new_cf = 0.01*(1-collision.unsqueeze(1))*(self.hidden2out_outcome_f(cf_h)+ y_cf[n][:,i:i+1]) + x_cf[n][:,i:i+1,-4]
                             else:
                                 y_new_cf = self.hidden2out_outcome_f(cf_h) + y_cf[n][:,i:i+1]
                         if torch.sum(torch.isnan(y_new_cf))>0:

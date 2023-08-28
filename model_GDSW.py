@@ -99,8 +99,10 @@ class GDSW(nn.Module):
                 nn.Dropout(0.3),
                 nn.ReLU(),
             )
-        self.hidden2out_a_or_ipw = nn.Linear(hidden_size, self.n_t_classes, bias=False)
-
+        self.hidden2out_a_or_ipw = nn.Sequential(
+                nn.Linear(hidden_size, self.n_t_classes, bias=False),
+                nn.ReLU(),
+            )
         # Outcome
         self.hidden2hidden_outcome_f = nn.Sequential(
             nn.Dropout(0.5),
@@ -191,7 +193,6 @@ class GDSW(nn.Module):
             self.hidden2hidden_x = nn.Sequential( # nn.Dropout(0.5), nn.Dropout(0.3),
                 nn.Linear(self.x_emb_size + n_Z_confounders + self.x_static_emb_size + self.x_emb_graph_size, hidden_size),
                 nn.Softplus(),
-                nn.ReLU(),
             )
             self.hidden2out_x = nn.Linear(hidden_size, self.x_dim_predicted, bias=False)
         
@@ -364,7 +365,8 @@ class GDSW(nn.Module):
                         y_new = self.hidden2out_outcome_f(f_h_)
                     else:
                         if self.theory and 'carla' in self.dataset and self.Pred_X: 
-                            y_new = 0.01*(1-collision.unsqueeze(1))*self.hidden2out_outcome_f(f_h_) + x[:,i:i+1,-4] #y[:,i:i+1] # 0->1, 1->0
+                            # y_new = 0.01*(1-collision.unsqueeze(1))*self.hidden2out_outcome_f(f_h_) + x[:,i:i+1,-4] #y[:,i:i+1] # 0->1, 1->0
+                            y_new = 0.01*(1-collision.unsqueeze(1))*(self.hidden2out_outcome_f(f_h_)+ y[:,i:i+1]) + x[:,i:i+1,-4]
                         else:
                             y_new = self.hidden2out_outcome_f(f_h_) + y[:,i:i+1]
                     if torch.sum(torch.isnan(y_new))>0:
@@ -416,7 +418,7 @@ class GDSW(nn.Module):
                     cf_h = self.hidden2hidden_outcome_f(torch.cat((cf_hidden, cf_treatment[:,i:i+1,n]), -1))
 
                     if self.Pred_X:
-                        cf_x_ = self.hidden2hidden_x(f_hidden) 
+                        cf_x_ = self.hidden2hidden_x(cf_hidden) 
                         if self.x_residual: 
                             cf_x_ = self.hidden2out_x(cf_x_)
                             x_new_cf = torch.zeros(batchSize,self.x_dim_predicted).to(device)
@@ -439,7 +441,8 @@ class GDSW(nn.Module):
                                 y_new_cf = torch.clamp(y_new_cf,max=1)
                         else:
                             if self.theory and 'carla' in self.dataset and self.Pred_X: 
-                                y_new_cf = 0.01*(1-collision.unsqueeze(1))*self.hidden2out_outcome_f(cf_h) + x_cf[n][:,i:i+1,-4] #y_cf[n][:,i:i+1] # 0->1, 1->0
+                                # y_new_cf = 0.01*(1-collision.unsqueeze(1))*self.hidden2out_outcome_f(cf_h) + x_cf[n][:,i:i+1,-4] #y_cf[n][:,i:i+1] # 0->1, 1->0
+                                y_new_cf = 0.01*(1-collision.unsqueeze(1))*(self.hidden2out_outcome_f(cf_h)+ y_cf[n][:,i:i+1]) + x_cf[n][:,i:i+1,-4]
                             else:
                                 y_new_cf = self.hidden2out_outcome_f(cf_h) + y_cf[n][:,i:i+1]
                         cf_outcome_out[n].append(y_new_cf)
@@ -455,8 +458,7 @@ class GDSW(nn.Module):
                         x_cf_[n][:,i+1] = tmp_pred_cf
             # roll out
             if rollout and i >= burn_in-1 and i < len_time:
-                if self.Pred_X:
-                    x[:,i+1] = tmp_pred
+                x[:,i+1] = tmp_pred
                 y[:,i+1] = y_new.squeeze(1)
             elif self.Pred_X and not rollout and i >= self.burn_in0:
                 if self.Pred_X:
